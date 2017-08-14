@@ -1,39 +1,43 @@
-// server.js
-// where your node app starts
-
-// init project
-var express = require('express');
+var express = require("express");
 var app = express();
+var port = 3000;
+var Bing = require("node-bing-api")({ accKey: "89c7f3c8c03041688156279e22016583" });
+var path = require("path");
 
-// we've started you off with Express, 
-// but feel free to use whatever libs or frameworks you'd like through `package.json`.
+app.use(express.static(path.join(__dirname, "views")));
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (request, response) {
-  response.sendFile(__dirname + '/views/index.html');
+app.get("/", (req, res) => {
+  
 });
 
-app.get("/dreams", function (request, response) {
-  response.send(dreams);
+
+app.get("/api/imagesearch/:search*", (req, res) => {
+  var query = req.query.offset;
+  var search = req.params.search;
+  
+  Bing.images(search, {
+  count: 10,   // Number of results (max 50) 
+  offset: query    // Skip first 3 result 
+  }, function(error, rez, body){
+    var response = [];
+    
+    for(var i=0; i<body.value.length; i++) {
+      response.push({
+        url: body.value[i].webSearchUrl,
+        snippet: body.value[i].name,
+        thumbnail: body.value[i].thumbnailUrl,
+        context: body.value[i].contentUrl
+      });
+    };    
+    res.json(response);
+  });
 });
 
-// could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
-app.post("/dreams", function (request, response) {
-  dreams.push(request.query.dream);
-  response.sendStatus(200);
-});
 
-// Simple in-memory store for now
-var dreams = [
-  "Find and count some sheep",
-  "Climb a really tall mountain",
-  "Wash the dishes"
-];
 
-// listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
-});
+
+app.listen(port, function() {
+  console.log("[SERVER] Server running at port " + port);
+})
+
